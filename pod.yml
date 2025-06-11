@@ -1,85 +1,61 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: brats-pod
+  name: fast-ddpm-brats-pod
 spec:
   nodeSelector:
     topology.kubernetes.io/region: us-west
   containers:
-    - name: brats-processing
+    - name: fast-ddpm-processing
       image: gitlab-registry.nrp-nautilus.io/prp/jupyter-stack/prp
       env:
         - name: REPO_PATH
-          value: /app/BraSyn_tutorial
-        - name: SYNAPSE_AUTHTOKEN
-          valueFrom:
-            secretKeyRef:
-              name: synapse-credentials
-              key: authtoken
+          value: /app/Fast-DDPM
       command:
         - "bash"
         - "-c"
       args:
         - |
-          sudo apt-get update && sudo apt-get install -y p7zip-full wget
+          sudo apt-get update && sudo apt-get install -y wget gdown
           
-          #pip install synapseclient
-          #synapse config
-          #synapse get -r syn51514105 
-          
-          git clone https://github.com/tsereda/BraSyn_tutorial.git ${REPO_PATH}
+          # Clone Fast-DDPM repository
+          git clone https://github.com/hongxujiang/Fast-DDPM.git ${REPO_PATH}
           cd ${REPO_PATH}
-          cp /data/ASNR-MICCAI-BraTS2023-GLI-Challenge-TrainingData.zip .
-          cp /data/ASNR-MICCAI-BraTS2023-GLI-Challenge-ValidationData.zip .
-          7z x ASNR-MICCAI-BraTS2023-GLI-Challenge-TrainingData.zip -y -mmt=$(nproc)
-          7z x ASNR-MICCAI-BraTS2023-GLI-Challenge-ValidationData.zip -y -mmt=$(nproc)
+          
+          # Setup conda environment
           source /opt/conda/etc/profile.d/mamba.sh
-          mamba create -n brasyn python=3.10 -y
-          mamba activate brasyn
-          pip install -r project/requirements.txt
-          pip install nnunetv2 gdown simpleitk numpy batchgenerators
+          mamba create -n fast-ddpm python=3.10.6 -y
+          mamba activate fast-ddpm
           
-          python drop_modality.py
-          python project/generate_missing_modality.py
-
-          export nnUNet_raw="/app/nnunet/raw"
-          export nnUNet_preprocessed="/app/nnunet/preprocessed"
-          export nnUNet_results="/app/nnunet/results"
-
-          mkdir -p /app/nnunet/{raw,preprocessed,results}
-
-          echo "Downloading pre-trained nnUNet weights, dataset.json, and plan.json..."
-          gdown 1n9dqT114udr9Qq8iYEKsJK347iHg9N88
-          gdown 1A_suxQwElucF3w1HEYg3wMo6dG9OxBHo
-          gdown 1U2b0BTNi8zrJACReoi_W08Fe-wM394wI
-
-          echo "Downloaded files:"
-          ls -la *.pth *.json
-
-          echo "Setting up nnUNet model structure..."
-          mkdir -p $nnUNet_results/Dataset137_BraTS2021/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_5/
+          # Install dependencies
+          pip install torch==1.12.1 torchvision==0.15.2
+          pip install -r requirements.txt
           
-          # Move files to correct locations (assuming the downloaded files have these names)
-          mv checkpoint_best.pth $nnUNet_results/Dataset137_BraTS2021/nnUNetTrainer__nnUNetPlans__3d_fullres/fold_5/checkpoint_final.pth
-          mv dataset.json $nnUNet_results/Dataset137_BraTS2021/nnUNetTrainer__nnUNetPlans__3d_fullres/
-          mv plans.json $nnUNet_results/Dataset137_BraTS2021/nnUNetTrainer__nnUNetPlans__3d_fullres/
-
-          echo "Converting data to nnUNet format..."
-          python Dataset137_BraTS21.py
-
-          ln -s $(pwd)/Dataset137_BraTS2021_test $nnUNet_raw/Dataset137_BraTS2021
-
-          # obtain the predicted segmentation maps.
-          nnUNetv2_predict -i "$nnUNet_raw/Dataset137_BraTS2021/imagesTr" -o "./outputs" -d 137 -c 3d_fullres -f 5
-
-          python cal_avg_dice.py
+          # Download processed dataset
+          echo "Downloading processed dataset..."
+          gdown 1kF0g8fMR5XPQ2FTbutfTQ-hwG_mTqerx
+          
+          # Extract data
+          echo "Extracting dataset..."
+          unzip -q processed_dataset.zip
+          mv processed_data/* data/
+          
+          # Verify data structure
+          echo "Data structure:"
+          ls -la data/
+          
+          # Train Fast-DDPM model on BraTS
+          echo "Starting Fast-DDPM training on BraTS..."
+          python fast_ddpm_main.py --config BRATS.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --scheduler_type uniform --timesteps 10
+          
+          # Sample from trained model
+          echo "Sampling from trained model..."
+          python fast_ddpm_main.py --config BRATS.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --sample --fid --scheduler_type uniform --timesteps 10
           
           sleep infinity
       volumeMounts:
         - name: git-repo
           mountPath: /app
-        - name: brats-data-volume
-          mountPath: /data
         - name: dshm
           mountPath: /dev/shm
       resources:
@@ -94,9 +70,6 @@ spec:
   volumes:
     - name: git-repo
       emptyDir: {}
-    - name: brats-data-volume
-      persistentVolumeClaim:
-        claimName: brats2025-1
     - name: dshm
       emptyDir:
         medium: Memory
