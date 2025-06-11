@@ -28,7 +28,7 @@ spec:
           mamba activate fast-ddpm
           
           # Install dependencies
-          pip install torch==1.12.1 torchvision==0.15.2
+          # pip install torch==1.12.1 torchvision==0.15.2
           pip install -r requirements.txt
           
           # Download processed dataset
