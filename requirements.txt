@@ -1,0 +1,12 @@
+Python==3.10.6
+torch==1.12.1
+torchvision==0.15.2
+numpy
+opencv-python
+tqdm
+tensorboard
+tensorboardX
+scikit-image
+medpy
+pillow
+scipy
