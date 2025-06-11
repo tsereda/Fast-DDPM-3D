@@ -8,3 +8,7 @@ medpy
 pillow
 scipy
 gdown
+PyYAML
+pandas
+lmdb
+matplotlib

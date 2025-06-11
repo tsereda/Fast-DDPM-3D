@@ -18,39 +18,30 @@ spec:
         - |
           sudo apt-get update && sudo apt-get install -y wget gdown
           
-          # Clone Fast-DDPM repository
           git clone https://github.com/tsereda/Fast-DDPM-3D.git ${REPO_PATH}
           cd ${REPO_PATH}
           
-          # Setup conda environment
           source /opt/conda/etc/profile.d/mamba.sh
           mamba create -n fast-ddpm python=3.10.6 -y
           mamba activate fast-ddpm
           
-          # Install dependencies
-          # pip install torch==1.12.1 torchvision==0.15.2
+          pip install torch torchvision
           pip install -r requirements.txt
           
-          # Download processed dataset
           echo "Downloading processed dataset..."
           gdown 1kF0g8fMR5XPQ2FTbutfTQ-hwG_mTqerx
           
-          # Extract data
           echo "Extracting dataset..."
-          unzip -q processed_dataset.zip
-          mv processed_data/* data/
+          unzip -q data.zip
           
-          # Verify data structure
           echo "Data structure:"
           ls -la data/
           
-          # Train Fast-DDPM model on BraTS
           echo "Starting Fast-DDPM training on BraTS..."
-          python fast_ddpm_main.py --config BRATS.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --scheduler_type uniform --timesteps 10
+          python fast_ddpm_main.py --config brats_linear.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --scheduler_type uniform --timesteps 10
           
-          # Sample from trained model
           echo "Sampling from trained model..."
-          python fast_ddpm_main.py --config BRATS.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --sample --fid --scheduler_type uniform --timesteps 10
+          python fast_ddpm_main.py --config brats_linear.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --sample --fid --scheduler_type uniform --timesteps 10
           
           sleep infinity
       volumeMounts:
