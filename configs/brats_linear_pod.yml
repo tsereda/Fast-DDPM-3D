@@ -16,7 +16,7 @@ model:
     in_channels: 2
     out_ch: 1
     ch: 128
-    ch_mult: [1, 1, 2, 2, 4, 4]
+    ch_mult: [1, 2, 4, 4]
     num_res_blocks: 2
     attn_resolutions: [16, ]
     dropout: 0.0
@@ -32,7 +32,7 @@ diffusion:
     num_diffusion_timesteps: 1000
 
 training:
-    batch_size: 4
+    batch_size: 2
     n_epochs: 10000
     n_iters: 5000000
     snapshot_freq: 100000
