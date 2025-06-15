@@ -38,10 +38,10 @@ spec:
           ls -la data/
           
           echo "Starting Fast-DDPM training on BraTS..."
-          python fast_ddpm_main.py --config brats_linear.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --scheduler_type uniform --timesteps 10
+          python fast_ddpm_main.py --config brats_linear_pod.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --scheduler_type uniform --timesteps 10
           
           echo "Sampling from trained model..."
-          python fast_ddpm_main.py --config brats_linear.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --sample --fid --scheduler_type uniform --timesteps 10
+          python fast_ddpm_main.py --config brats_linear_pod.yml --dataset BRATS --exp ./experiments --doc fast_ddpm_brats --sample --fid --scheduler_type uniform --timesteps 10
           
           sleep infinity
       volumeMounts:
